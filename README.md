@@ -23,5 +23,8 @@ You're all set! Simply run `Tidal RPC.py`, and you should be able to see the ric
 
 This program requires that your TIDAL window remains open. It does not need to be in focus (apps can be on top of it), but it cannot be minimised or in your system tray.
 
+## Media
+<img src="https://aejae.github.io/img/tidal-rp-media.png" alt="Project in Action">
+
 ## A Project by AJSF ([@AeJae](https://github.com/AeJae))
 <a href="https://aejae.github.io/" target="_blank"><img src="https://aejae.github.io/img/logo.png" alt="Logo" width="70px"></a>
