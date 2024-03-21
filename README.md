@@ -8,7 +8,7 @@ TIDAL, the wordmark and logo are registered trademarks of TIDAL Music AS.
 
 This project provides a simple and safe method of getting basic TIDAL rich presence on your profile, featuring the song name and artist.
 
-1. Download the latest release (.zip).
+1. Download the [latest release](https://github.com/AeJae/Tidal-Rich-Presence/releases/latest) (.zip).
 2. Head to the [Discord developer portal](https://discord.com/developers/docs/intro).
 3. Select applications.
 4. Sign in to Discord.
