@@ -1,6 +1,6 @@
 # Python-based rich presence for TIDAL.
 
-I and this project are NOT affiliated with either TIDAL or Discord.
+Neither I nor this program are affiliated with either TIDAL or Discord in any way.
 
 TIDAL, the wordmark and logo are registered trademarks of TIDAL Music AS.
 
