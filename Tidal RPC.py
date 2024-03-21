@@ -1,7 +1,7 @@
 #   Tidal-Rich-Presence, Discord rich presence for TIDAL.
 #   Copyright (C) 2024  Arun Fletcher
 #
-#   I and this program am not affiliated with TIDAL in any way.
+#   Neither I nor this program are affiliated with TIDAL in any way.
 #   The TIDAL wordmark and logo are registered trademarks of TIDAL Music AS.
 #
 #   This program is free software: you can redistribute it and/or modify
