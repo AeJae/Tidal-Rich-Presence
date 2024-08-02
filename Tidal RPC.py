@@ -77,8 +77,9 @@ while not disc_found:
     try:
         RPC.connect()
     except Exception:
-        print("Discord not running, going to sleep for one minute.")
+        print("Discord not running, going to sleep for one minute.", end='\n')
         try:
+            print("Hit CTRL-C if you want to terminate the script.", end='\n')
             sleep(60)
             clear()
         except KeyboardInterrupt:
@@ -99,7 +100,7 @@ while True:
             small_text="Streaming lossless in up to 24-bit 192kHz."
         )
         clear()
-        print('Rich presence active...', end='\r')
+        print("Rich presence active...", end='\n')
     # A catch all exception. The program should continue attempting to find the TIDAL window
     # and maintain its Discord connection under all circumstances.
     except Exception:
@@ -109,9 +110,10 @@ while True:
             large_text="TIDAL"
         )
         clear()
-        print("Streaming paused or window closed...", end='\r')
+        print("Streaming paused or window closed...", end='\n')
     try:
         # MUST be no less than 15 seconds to remain within Discord rate limits.
+        print("Hit CTRL-C if you want to terminate the script.", end='\n')
         sleep(15)
     # Terminate properly on user CTRL-C
     except KeyboardInterrupt:
