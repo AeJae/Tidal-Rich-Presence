@@ -23,10 +23,12 @@ import time
 import psutil
 import win32gui
 import win32process
+import os
 
 # Application ID (Enter yours here).
 client_id = "0000000000000000000"
-
+disc_found = False
+RPC = Presence(client_id)
 
 # Returns a list of windows related to the passed process ID.
 def get_windows_by_pid(pid):
@@ -61,12 +63,15 @@ def get_tidal_info():
     song_info = all_titles[0].split(" - ")
     return song_info[0], song_info[1]
 
-
-LINE_CLEAR = '\x1b[2K'
-
-RPC = Presence(client_id)
-RPC.connect()
-
+while not disc_found:
+    try:
+        RPC.connect()
+    except Exception:
+        print("Discord not running, going to sleep.")
+        time.sleep(60)
+        os.system("cls")
+    else: disc_found = True
+    
 # Update your status every 15 seconds (to stay within rate limits).
 while True:
     try:
@@ -79,7 +84,7 @@ while True:
             small_image="hra",
             small_text="Streaming lossless in up to 24-bit 192kHz."
         )
-        print(end=LINE_CLEAR)
+        os.system("cls")
         print('Rich presence active...', end='\r')
     # A catch all exception. The program should continue attempting to find the TIDAL window
     # and maintain its Discord connection under all circumstances.
@@ -89,7 +94,14 @@ while True:
             large_image="tidallogo",
             large_text="TIDAL"
         )
-        print(end=LINE_CLEAR)
+        os.system("cls")
         print("Streaming paused or window closed...", end='\r')
-    # MUST be no less than 15 seconds to remain within Discord rate limits.
-    time.sleep(15)
+    try:
+        # MUST be no less than 15 seconds to remain within Discord rate limits.
+        time.sleep(15)
+    # Terminate properly on user CTRL-C
+    except KeyboardInterrupt:
+        RPC.close()
+        os.system("cls")
+        print("Connection terminated by user. Exiting.")
+        sys.exit()
