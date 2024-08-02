@@ -19,11 +19,11 @@
 
 from pypresence import Presence
 import sys
-import time
+from time import sleep
 import psutil
 import win32gui
 import win32process
-import os
+from os import system, name
 
 # Application ID (Enter yours here).
 client_id = "0000000000000000000"
@@ -62,14 +62,28 @@ def get_tidal_info():
 
     song_info = all_titles[0].split(" - ")
     return song_info[0], song_info[1]
+    
+def clear():
+ 
+    # for windows
+    if name == 'nt':
+        _ = system('cls')
+ 
+    # for mac and linux(here, os.name is 'posix')
+    else:
+        _ = system('clear')
 
 while not disc_found:
     try:
         RPC.connect()
     except Exception:
-        print("Discord not running, going to sleep.")
-        time.sleep(60)
-        os.system("cls")
+        print("Discord not running, going to sleep for one minute.")
+        try:
+            sleep(60)
+            clear()
+        except KeyboardInterrupt:
+            print("Script terminated by user. Exiting.")
+            sys.exit()
     else: disc_found = True
     
 # Update your status every 15 seconds (to stay within rate limits).
@@ -84,7 +98,7 @@ while True:
             small_image="hra",
             small_text="Streaming lossless in up to 24-bit 192kHz."
         )
-        os.system("cls")
+        clear()
         print('Rich presence active...', end='\r')
     # A catch all exception. The program should continue attempting to find the TIDAL window
     # and maintain its Discord connection under all circumstances.
@@ -94,14 +108,14 @@ while True:
             large_image="tidallogo",
             large_text="TIDAL"
         )
-        os.system("cls")
+        clear()
         print("Streaming paused or window closed...", end='\r')
     try:
         # MUST be no less than 15 seconds to remain within Discord rate limits.
-        time.sleep(15)
+        sleep(15)
     # Terminate properly on user CTRL-C
     except KeyboardInterrupt:
         RPC.close()
-        os.system("cls")
-        print("Connection terminated by user. Exiting.")
+        clear()
+        print("Script terminated by user. Exiting.")
         sys.exit()
