@@ -77,7 +77,7 @@ def clear():
 while not disc_found:
     try:
         RPC.connect()
-    # A catch-all exception. The program should always continue attempting to find the TIDAL window.
+    # A catch-all exception. The program should always continue attempting to connect to Discord.
     except Exception:
         print("Discord not running, going to sleep for one minute.", end='\n')
         try:
