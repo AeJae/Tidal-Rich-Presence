@@ -17,7 +17,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pypresence import Presence
+from pypresence import Presence, InvalidID
 from os import system, name
 from time import sleep
 import sys
@@ -77,6 +77,11 @@ def clear():
 while not disc_found:
     try:
         RPC.connect()
+    # Notify the user if their entered client ID is invalid.
+    except InvalidID:
+        print("Invalid client ID. Please check the entered value.")
+        sleep(5)
+        sys.exit(1)
     # A catch-all exception. The program should always continue attempting to connect to Discord.
     except Exception:
         print("Discord not running, going to sleep for one minute.", end='\n')
