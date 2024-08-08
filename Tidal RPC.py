@@ -17,18 +17,19 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pypresence import Presence
-import sys
+from pypresence import Presence, InvalidID
+from os import system, name
 from time import sleep
+import sys
 import psutil
 import win32gui
 import win32process
-from os import system, name
 
 # Application ID (Enter yours here).
 client_id = "0000000000000000000"
 disc_found = False
 RPC = Presence(client_id)
+
 
 # Returns a list of windows related to the passed process ID.
 def get_windows_by_pid(pid):
@@ -62,20 +63,26 @@ def get_tidal_info():
 
     song_info = all_titles[0].split(" - ")
     return song_info[0], song_info[1]
-    
+
+
 def clear():
- 
     # for windows
     if name == 'nt':
         _ = system('cls')
- 
-    # for mac and linux(here, os.name is 'posix')
+    # for mac and linux (here, os.name is 'posix')
     else:
         _ = system('clear')
+
 
 while not disc_found:
     try:
         RPC.connect()
+    # Notify the user if their entered client ID is invalid.
+    except InvalidID:
+        print("Invalid client ID. Please check the entered value.")
+        sleep(5)
+        sys.exit(1)
+    # A catch-all exception. The program should always continue attempting to connect to Discord.
     except Exception:
         print("Discord not running, going to sleep for one minute.", end='\n')
         try:
@@ -84,8 +91,10 @@ while not disc_found:
             clear()
         except KeyboardInterrupt:
             print("Script terminated by user. Exiting.")
-            sys.exit()
-    else: disc_found = True
+            sys.exit(0)
+    # If there is no exception here, the discord connection has been successfully made.
+    else:
+        disc_found = True
     
 # Update your status every 15 seconds (to stay within rate limits).
 while True:
@@ -101,7 +110,7 @@ while True:
         )
         clear()
         print("Rich presence active...", end='\n')
-    # A catch all exception. The program should continue attempting to find the TIDAL window
+    # A catch-all exception. The program should continue attempting to find the TIDAL window
     # and maintain its Discord connection under all circumstances.
     except Exception:
         RPC.update(
@@ -115,9 +124,9 @@ while True:
         # MUST be no less than 15 seconds to remain within Discord rate limits.
         print("Hit CTRL-C if you want to terminate the script.", end='\n')
         sleep(15)
-    # Terminate properly on user CTRL-C
+    # Close RPC connection properly on user CTRL-C
     except KeyboardInterrupt:
         RPC.close()
         clear()
         print("Script terminated by user. Exiting.")
-        sys.exit()
+        sys.exit(0)
