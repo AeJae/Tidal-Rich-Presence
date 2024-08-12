@@ -71,17 +71,17 @@ def get_tidal_info():
     
 # If Discord was closed, safety check to see if it's running again before attempting to reconnect. Otherwise it crashes with PipeClosed exception.
 def processRunning(processName):
-    print("Debug: looking for process " + processName, end='\n')
+    #print("Debug: looking for process " + processName, end='\n')
     # Iterate over the all the running process
     for p in psutil.process_iter():
         try:
             # Check if process name contains the given name string.
             if processName.lower() in p.name().lower():
-                print("Debug: " + processName + " found!", end='\n')
+                #print("Debug: " + processName + " found!", end='\n')
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
-    print("Debug: " + processName + " NOT found!", end='\n')
+    #print("Debug: " + processName + " NOT found!", end='\n')
     return False;
 
 # OS independent clear screen function.
