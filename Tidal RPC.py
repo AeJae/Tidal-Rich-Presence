@@ -48,12 +48,15 @@ def get_windows_by_pid(pid):
 def get_tidal_info():
     tidal_processes = []
     all_titles = []
+    #print("Debug: looking for song name started... ", end='\n')
 
     # Finds all processes related to TIDAL.
     for processID in psutil.pids():
         p = psutil.Process(processID)
         if "tidal" in p.name().lower():
             tidal_processes.append(processID)
+            #print("Debug: found process " + processID, end='\n')
+            
 
     # Finds GUI windows related to each PID, if they exist.
     for tidal_process_id in tidal_processes:
@@ -68,17 +71,17 @@ def get_tidal_info():
     
 # If Discord was closed, safety check to see if it's running again before attempting to reconnect. Otherwise it crashes with PipeClosed exception.
 def processRunning(processName):
-    #print("Debug: looking for process " + processName, end='\n')
+    print("Debug: looking for process " + processName, end='\n')
     # Iterate over the all the running process
     for p in psutil.process_iter():
         try:
             # Check if process name contains the given name string.
             if processName.lower() in p.name().lower():
-                #print("Debug: " + processName + " found!", end='\n')
+                print("Debug: " + processName + " found!", end='\n')
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
-    #print("Debug: " + processName + " NOT found!", end='\n')
+    print("Debug: " + processName + " NOT found!", end='\n')
     return False;
 
 # OS independent clear screen function.
@@ -174,6 +177,7 @@ while True:
     if not discord_alive:
         print("Discord process not found, closing socket and reconnecting in 15 seconds...", end='\n')
         RPC.close()
+        discord_connected = False
         sleep(15)
         connectDiscord()
     tidal_alive = processRunning("tidal")
