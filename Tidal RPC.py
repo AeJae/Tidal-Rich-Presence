@@ -31,6 +31,7 @@ discord_alive = False
 discord_connected = False
 RPC = Presence(client_id)
 tidal_paused = False
+tidal_alive = False
 
 # Returns a list of windows related to the passed process ID.
 def get_windows_by_pid(pid):
@@ -66,18 +67,18 @@ def get_tidal_info():
     return song_info[0], song_info[1]
     
 # If Discord was closed, safety check to see if it's running again before attempting to reconnect. Otherwise it crashes with PipeClosed exception.
-def discordRunning():
-    processName = "discord"
+def processRunning(processName):
+    #print("Debug: looking for process " + processName, end='\n')
     # Iterate over the all the running process
     for p in psutil.process_iter():
         try:
             # Check if process name contains the given name string.
             if processName.lower() in p.name().lower():
-                print("Discord found!", end='\n')
+                #print("Debug: " + processName + " found!", end='\n')
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
-    print("Discord NOT found!", end='\n')
+    #print("Debug: " + processName + " NOT found!", end='\n')
     return False;
 
 # OS independent clear screen function.
@@ -102,7 +103,7 @@ def connectDiscord():
         except InvalidID:
             print("Invalid client ID. Please check the entered value.")
             sleep(5)
-            sys.exit(1)
+            quit(1)
         except Exception:
             print("Discord not running, going to sleep for one minute.", end='\n')
             try:
@@ -110,66 +111,103 @@ def connectDiscord():
                 sleep(60)
                 clear()
             except KeyboardInterrupt:
-                quit()
+                quit(0)
         else: discord_connected = True
+        
+def waitForTidal():
+    global tidal_alive
+    while not tidal_alive:
+        print("Tidal not running, going to sleep for one minute.", end='\n')
+        try:
+            print("Hit CTRL-C if you want to terminate the script.", end='\n')
+            sleep(60)
+            clear()
+            tidal_alive = processRunning("tidal")
+        except KeyboardInterrupt:
+            quit(0)
 
 # Handles the updating of rich presence information while both TIDAL and Discord are found
 def updateRPC():
     global RPC
     global details
-    RPC.update(
-        state=f"by {details[1]}",
-        details=details[0],
-        large_image="tidallogo",
-        large_text="TIDAL",
-        small_image="hra",
-        small_text="Streaming lossless in up to 24-bit 192kHz."
-    )
-    print("Rich presence updated...", end='\n')
+    global tidal_alive
+    tidal_alive = processRunning("tidal")
+    if tidal_alive:
+        RPC.update(
+            state=f"by {details[1]}",
+            details=details[0],
+            large_image="tidallogo",
+            large_text="TIDAL",
+            small_image="hra",
+            small_text="Streaming lossless in up to 24-bit 192kHz."
+        )
+        print("Rich presence updated...", end='\n')
+    else: print("Tidal process not found.", end='\n')
     
 # Function to set the rich presence status to Paused when TIDAL is no longer playing or info can't be found
 def pauseRPC():
     global RPC
-    RPC.update(
-        details="Paused",
-        large_image="tidallogo",
-        large_text="TIDAL"
-    )
-    clear()
-    print("Streaming paused or window closed...", end='\n')
-    print("Rich presence set to Paused.", end='\n')
-
+    global tidal_alive
+    global tidal_paused
+    tidal_alive = processRunning("tidal")
+    if tidal_alive:
+        RPC.update(
+            details="Paused",
+            large_image="tidallogo",
+            large_text="TIDAL"
+        )
+        print("Streaming paused or window closed...", end='\n')
+        print("Rich presence set to Paused.", end='\n')
+        tidal_paused = True
+    else: print("Tidal process not found.", end='\n')
+    
 # Function to terminate the script, usually called from KeyboardInterrupt exception
-def quit():
+def quit(code):
     print("Script terminated by user. Exiting.")
-    sys.exit(0)
+    sys.exit(code)
 
 # Call the function to attempt to connect to Discord
 connectDiscord()
 # Update your status every 15 seconds (to stay within rate limits).
 while True:
-    try:
-        # Attempt to get info from TIDAL
-        details = get_tidal_info()
-        print("TIDAL is playing, attempting to update Rich presence...", end='\n')
-        tidal_paused = False
-    # A catch all exception. The program should continue attempting to find the TIDAL window
-    # and maintain its Discord connection under all circumstances.
-    except Exception:
-        discord_alive = discordRunning()
-        if discord_alive:
-            pauseRPC()
-            tidal_paused = True
-        else: print("Discord process no longer found.", end='\n')
+    discord_alive = processRunning("discord")
+    if not discord_alive:
+        print("Discord process not found, closing socket and reconnecting in 15 seconds...", end='\n')
+        RPC.close()
+        sleep(15)
+        connectDiscord()
+    tidal_alive = processRunning("tidal")
+    if tidal_alive:
+        try:
+            print("TIDAL is running!", end='\n')
+            # Attempt to get info from TIDAL
+            details = get_tidal_info()
+            print("TIDAL is playing, successfully retrieved track info...", end='\n')
+            tidal_paused = False
+        # A catch all exception. The program should continue attempting to find the TIDAL window
+        # and maintain its Discord connection under all circumstances.
+        except Exception:
+            discord_alive = processRunning("discord")
+            if discord_alive:
+                pauseRPC()
+            else:
+                print("Discord process not found.", end='\n')
+                tidal_paused = True
+    else:
+        print("Tidal process not found.", end='\n')
+        waitForTidal()
     if not tidal_paused:
         try:
-            updateRPC()
+            discord_alive = processRunning("discord")
+            if discord_alive:
+                print("Attempting to update Rich presence...", end='\n')
+                updateRPC()
         except Exception:
             discord_connected = False
             clear()
             print("Discord connection lost or Discord closed, attempting to reconnect.", end='\n')
             connectDiscord()
-            print("Discord process now found!", end='\n')
+            print("Discord process now found! Updating on the next cycle.", end='\n')
     try:
         # MUST be no less than 15 seconds to remain within Discord rate limits.
         print("Sleeping for 15 seconds. Hit CTRL-C if you want to terminate the script.", end='\n')
@@ -177,12 +215,12 @@ while True:
         clear()
     # Terminate properly on user CTRL-C
     except KeyboardInterrupt:
-        discord_alive = discordRunning()
+        discord_alive = processRunning("discord")
         if discord_alive:
             try:
                 print("Attempting to close RPC socket.", end='\n')
                 RPC.close()
-                quit()
+                quit(0)
             except Exception:
-                quit()
-        else: quit()
+                quit(0)
+        else: quit(0)
