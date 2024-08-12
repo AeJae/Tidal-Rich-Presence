@@ -17,13 +17,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pypresence import Presence
-import sys
+from pypresence import Presence, InvalidID
+from os import system, name
 from time import sleep
+import sys
 import psutil
 import win32gui
 import win32process
-from os import system, name
 
 # Application ID (Enter yours here).
 client_id = "0000000000000000000"
@@ -98,6 +98,11 @@ def connectDiscord():
     while not discord_connected:
         try:
             RPC.connect()
+        # Notify the user if their entered client ID is invalid.
+        except InvalidID:
+            print("Invalid client ID. Please check the entered value.")
+            sleep(5)
+            sys.exit(1)
         except Exception:
             print("Discord not running, going to sleep for one minute.", end='\n')
             try:
@@ -137,7 +142,7 @@ def pauseRPC():
 # Function to terminate the script, usually called from KeyboardInterrupt exception
 def quit():
     print("Script terminated by user. Exiting.")
-    sys.exit()
+    sys.exit(0)
 
 # Call the function to attempt to connect to Discord
 connectDiscord()
