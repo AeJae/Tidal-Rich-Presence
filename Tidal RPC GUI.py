@@ -275,6 +275,7 @@ def TIDAL(window):
             print("Sleeping for 15 seconds. Hit Exit if you want to terminate the script.", end='\n')
             sleep(15)
             clear()
+            window['-ML-'].update('')
         # Terminate properly on user Exit
         except KeyboardInterrupt:
             quit(0)
