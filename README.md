@@ -39,6 +39,8 @@ Compile the AHK script into an executable file (use compression: NONE to avoid a
 
 Run the file! Optionally add it to startup by putting a shortcut to it in the startup folder, which you can access by using WindowsKey + R and entering `shell:startup`
 
+Note: the CLI variant may start hidden in the system tray, and can be hidden/restored by doubleclicking the tray icon (looks like a C:> ).
+
 ## Media
 Rich presence preview:
 
