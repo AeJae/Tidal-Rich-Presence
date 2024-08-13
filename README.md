@@ -24,8 +24,8 @@ You're all set! Simply run `Tidal RPC.py`, and you should be able to see the ric
 
 This program requires that your TIDAL window remains open. It does not need to be in focus (apps can be on top of it), but it cannot be minimised or in your system tray.
 
-## Running the GUI without any terminal windows
-Create a simple .bat file running the GUI python code with
+## Running the CLI/GUI variants without any terminal windows
+Create a simple .bat file running the CLI or GUI python code with
 
 `@echo off`
 
