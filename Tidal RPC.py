@@ -166,8 +166,13 @@ def pauseRPC():
     
 # Function to terminate the script, usually called from KeyboardInterrupt exception
 def quit(code):
-    print("Script terminated by user. Exiting.")
-    sys.exit(code)
+    print("Script terminated by user. Exiting.", end='\n')
+    try:
+        RPC.close()
+        print("Successfully closed socket.", end='\n')
+        sys.exit(code)
+    except Exception:
+        sys.exit(code)
 
 # Call the function to attempt to connect to Discord
 connectDiscord()
@@ -219,12 +224,4 @@ while True:
         clear()
     # Terminate properly on user CTRL-C
     except KeyboardInterrupt:
-        discord_alive = processRunning("discord")
-        if discord_alive:
-            try:
-                print("Attempting to close RPC socket.", end='\n')
-                RPC.close()
-                quit(0)
-            except Exception:
-                quit(0)
-        else: quit(0)
+        quit(0)
