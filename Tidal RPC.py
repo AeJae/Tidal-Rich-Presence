@@ -176,9 +176,11 @@ def pauseRPC():
 # Function to terminate the script, usually called from KeyboardInterrupt exception
 def quit(code):
     print("Script terminated by user. Exiting.", end='\n')
+    sleep(1)
     try:
         RPC.close()
         print("Successfully closed socket.", end='\n')
+        sleep(1)
         sys.exit(code)
     except Exception:
         sys.exit(code)
