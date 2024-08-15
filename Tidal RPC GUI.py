@@ -258,10 +258,10 @@ def TIDAL(window):
                 # Attempt to get info from TIDAL
                 details = get_tidal_info()
                 if details[0] and details[1]:
-                    print("Debug: TIDAL is playing, successfully retrieved track info...", end='\n')
+                    #print("Debug: TIDAL is playing, successfully retrieved track info...", end='\n')
                     tidal_paused = False
                 else:
-                    print("Debug: Unable to get song information.", end='\n')
+                    #print("Debug: Unable to get song information.", end='\n')
                     discord_alive = processRunning("discord")
                     if discord_alive and discord_connected:
                         pauseRPC()
