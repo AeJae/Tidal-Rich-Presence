@@ -41,9 +41,11 @@ def get_windows_by_pid(pid):
     pid_windows = []
 
     def callback(hwnd, hwnds):
-        if win32gui.IsWindowVisible(hwnd) and pid == win32process.GetWindowThreadProcessId(hwnd)[1]:
+        _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+        if win32gui.IsWindowVisible(hwnd) and pid == found_pid:
             hwnds.append(hwnd)
         return True
+
     win32gui.EnumWindows(callback, pid_windows)
     return pid_windows
 
@@ -51,42 +53,47 @@ def get_windows_by_pid(pid):
 def get_tidal_info():
     tidal_processes = []
     all_titles = []
-    #print("Debug: looking for song name started... ", end='\n')
 
     # Finds all processes related to TIDAL.
-    for processID in psutil.pids():
-        p = psutil.Process(processID)
-        if "tidal" in p.name().lower():
-            tidal_processes.append(processID)
-            #print("Debug: found process " + processID, end='\n')
-            
+    for process in psutil.process_iter(attrs=['pid', 'name']):
+        try:
+            if "tidal" in process.info['name'].lower():
+                tidal_processes.append(process.info['pid'])
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
 
     # Finds GUI windows related to each PID, if they exist.
     for tidal_process_id in tidal_processes:
         windows = get_windows_by_pid(tidal_process_id)
         # If a PID has a GUI window, add its title to the titles list.
-        if windows:
-            for w in windows:
-                all_titles.append(win32gui.GetWindowText(w))
+        for w in windows:
+            window_text = win32gui.GetWindowText(w)
+            if window_text:
+                all_titles.append(window_text)
 
-    song_info = all_titles[0].split(" - ")
-    return song_info[0], song_info[1]
+    # Process titles to extract song information.
+    if all_titles:
+        song_info = all_titles[0].split(" - ")
+        if len(song_info) >= 2:
+            return song_info[0], song_info[1]
+
+    return None, None
     
 # If Discord was closed, safety check to see if it's running again before attempting to reconnect. Otherwise it crashes with PipeClosed exception.
 def processRunning(processName):
     #print("Debug: looking for process " + processName, end='\n')
     # Iterate over the all the running process
-    for p in psutil.process_iter():
+    for p in psutil.process_iter(['name']):
         try:
             # Check if process name contains the given name string.
-            if processName.lower() in p.name().lower():
+            if processName.lower() in p.info['name'].lower():
                 #print("Debug: " + processName + " found!", end='\n')
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
+            continue
     #print("Debug: " + processName + " NOT found!", end='\n')
     return False;
-
+    
 # OS independent clear screen function.
 def clear():
  
@@ -131,6 +138,7 @@ def waitForTidal():
             tidal_alive = processRunning("tidal")
         except KeyboardInterrupt:
             quit(0)
+    clear()
     print("TIDAL is now running!", end='\n')
 
 # Handles the updating of rich presence information while both TIDAL and Discord are found
@@ -249,29 +257,53 @@ def TIDAL(window):
                 #print("Debug: TIDAL is running!", end='\n')
                 # Attempt to get info from TIDAL
                 details = get_tidal_info()
-                #print("Debug: TIDAL is playing, successfully retrieved track info...", end='\n')
+                if details[0] and details[1]:
+                print("Debug: TIDAL is playing, successfully retrieved track info...", end='\n')
                 tidal_paused = False
+                else:
+                    print("Debug: Unable to get song information.", end='\n')
+                    discord_alive = processRunning("discord")
+                    if discord_alive and discord_connected:
+                        pauseRPC()
+                    elif discord_alive and not discord_connected:
+                        discord_connected = False
+                        clear()
+                        print("Discord connection lost, attempting to reconnect.", end='\n')
+                        connectDiscord()
+                        print("Discord connection restored! Updating on the next cycle.", end='\n')
+                    else:
+                        print("Discord process not found or not connected.", end='\n')
+                        tidal_paused = True
             # A catch all exception. The program should continue attempting to find the TIDAL window
             # and maintain its Discord connection under all circumstances.
             except Exception:
+                print("Unable to get song information.", end='\n')
                 discord_alive = processRunning("discord")
-                if discord_alive:
+                if discord_alive and discord_connected:
                     pauseRPC()
                 else:
-                    print("Discord process not found.", end='\n')
+                    print("Discord process not found or not connected.", end='\n')
                     tidal_paused = True
         else:
             #print("Debug: Tidal process not found.", end='\n')
-            if not tidal_paused:
-                RPC.close()
-                tidal_paused = True
+            RPC.close()
+            discord_connected = False
+            tidal_paused = True
             waitForTidal()
+            connectDiscord()
+            print("Discord connection restored! Updating on the next cycle.", end='\n')
         if not tidal_paused:
             try:
                 discord_alive = processRunning("discord")
-                if discord_alive:
+                if discord_alive and discord_connected:
                     #print("Debug: Attempting to update Rich presence...", end='\n')
                     updateRPC()
+                else:
+                    discord_connected = False
+                    clear()
+                    print("Discord connection lost, attempting to reconnect.", end='\n')
+                    connectDiscord()
+                    print("Discord process now found! Updating on the next cycle.", end='\n')
             except Exception:
                 discord_connected = False
                 clear()
