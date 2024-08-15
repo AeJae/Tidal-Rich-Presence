@@ -33,7 +33,7 @@ client_id = "0000000000000000000"
 discord_alive = False
 discord_connected = False
 RPC = Presence(client_id)
-tidal_paused = False
+tidal_paused = True
 tidal_alive = False
 
 # Returns a list of windows related to the passed process ID.
@@ -107,7 +107,7 @@ def connectDiscord():
             RPC.connect()
         # Notify the user if their entered client ID is invalid.
         except InvalidID:
-            print("Invalid client ID. Please check the entered value.")
+            print("Invalid client ID. Please check the entered value in the code.")
             sleep(5)
             quit(1)
         except Exception:
@@ -123,14 +123,15 @@ def connectDiscord():
 def waitForTidal():
     global tidal_alive
     while not tidal_alive:
+        clear()
         print("Tidal not running, going to sleep for one minute.", end='\n')
         try:
             print("Hit Exit if you want to terminate the script.", end='\n')
             sleep(60)
-            clear()
             tidal_alive = processRunning("tidal")
         except KeyboardInterrupt:
             quit(0)
+    print("TIDAL is now running!", end='\n')
 
 # Handles the updating of rich presence information while both TIDAL and Discord are found
 def updateRPC():
@@ -147,7 +148,7 @@ def updateRPC():
             small_image="hra",
             small_text="Streaming lossless in up to 24-bit 192kHz."
         )
-        print("Rich presence updated...", end='\n')
+        print("Rich presence successfully updated!", end='\n')
     else: print("Tidal process not found.", end='\n')
     
 # Function to set the rich presence status to Paused when TIDAL is no longer playing or info can't be found
@@ -184,7 +185,7 @@ def quit(code):
 def the_gui():
     menu = ['', ['Show Window', 'Hide Window', 'Exit']]
     tooltip = 'Tidal RPC'
-    layout = [[sg.Text("TIDAL Rich Presence for Discord")], [sg.Multiline(size=(50, 6), key='-ML-', reroute_stdout=True, write_only=True, autoscroll=True, auto_refresh=True, reroute_cprint=True)],
+    layout = [[sg.Text("TIDAL Rich Presence for Discord")], [sg.Multiline(size=(50, 7), key='-ML-', reroute_stdout=True, write_only=True, autoscroll=True, auto_refresh=True, reroute_cprint=True)],
     [sg.T('Double click icon to restore, or right click and choose Show Window!')],
     [sg.Button("Hide Window")],
     [sg.Button("Exit")]]
@@ -193,6 +194,9 @@ def the_gui():
     tray = SystemTray(menu, single_click_events=False, window=window, tooltip=tooltip, icon=app_icon)
     threading.Thread(target=TIDAL, args=(window,), daemon=True).start()
     sg.cprint_set_output_destination(window, '-ML-')
+    window.hide()
+    tray.show_icon() 
+    tray.show_message('TIDAL RPC', 'TIDAL RPC hidden! Double click to show again.')
     # --------------------- EVENT LOOP ---------------------
     while True:
         # wait for up to 100 ms for a GUI event
@@ -212,7 +216,7 @@ def the_gui():
         elif event in ('Hide Window', sg.WIN_CLOSE_ATTEMPTED_EVENT):
             window.hide()
             tray.show_icon()        # if hiding window, better make sure the icon is visible
-            tray.show_message('TIDAL RPC', 'TIDAL RPC hidden!')
+            tray.show_message('TIDAL RPC', 'TIDAL RPC hidden! Double click to show again.')
         elif event == 'Hide Icon':
             tray.hide_icon()
         elif event == 'Show Icon':
@@ -242,10 +246,10 @@ def TIDAL(window):
         tidal_alive = processRunning("tidal")
         if tidal_alive:
             try:
-                print("TIDAL is running!", end='\n')
+                #print("Debug: TIDAL is running!", end='\n')
                 # Attempt to get info from TIDAL
                 details = get_tidal_info()
-                print("TIDAL is playing, successfully retrieved track info...", end='\n')
+                #print("Debug: TIDAL is playing, successfully retrieved track info...", end='\n')
                 tidal_paused = False
             # A catch all exception. The program should continue attempting to find the TIDAL window
             # and maintain its Discord connection under all circumstances.
@@ -257,13 +261,16 @@ def TIDAL(window):
                     print("Discord process not found.", end='\n')
                     tidal_paused = True
         else:
-            print("Tidal process not found.", end='\n')
+            #print("Debug: Tidal process not found.", end='\n')
+            if not tidal_paused:
+                RPC.close()
+                tidal_paused = True
             waitForTidal()
         if not tidal_paused:
             try:
                 discord_alive = processRunning("discord")
                 if discord_alive:
-                    print("Attempting to update Rich presence...", end='\n')
+                    #print("Debug: Attempting to update Rich presence...", end='\n')
                     updateRPC()
             except Exception:
                 discord_connected = False
